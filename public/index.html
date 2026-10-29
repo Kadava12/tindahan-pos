@@ -1,0 +1,852 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10231b">
+<title>Tindahan POS</title>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#1c2b24;background:#f3f6f4;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:#176b49;color:white;font-weight:650}
+button:disabled{opacity:.5;cursor:not-allowed}
+.secondary{background:#e7eee9;color:#244234}
+.danger{background:#b42332}
+.muted{color:#718077}
+.small{font-size:12px}
+header{background:#10231b;color:white;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:21px;font-weight:800}
+.brand span{color:#80d9a8}
+main{max-width:1400px;margin:auto;padding:22px}
+.login{max-width:420px;margin:8vh auto;background:white;padding:28px;border-radius:18px;box-shadow:0 8px 35px #14271b12}
+h1,h2,h3,p{margin-top:0}
+h1{font-size:25px}
+h2{font-size:19px}
+.field{display:grid;gap:6px;margin:12px 0}
+.field label{font-size:13px;font-weight:700;color:#5a6c61}
+input,select{width:100%;min-width:0;border:1px solid #d7e1da;border-radius:9px;padding:11px;background:white;color:#1c2b24}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+nav button{background:#e4ebe6;color:#3b5546}
+nav button.active{background:#176b49;color:white}
+.panel{background:white;border:1px solid #e4eae5;border-radius:15px;padding:18px;margin-bottom:16px}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.8fr);gap:16px;align-items:start}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.stat{background:white;border:1px solid #e4eae5;border-radius:13px;padding:16px;min-width:0}
+.stat strong{display:block;font-size:23px;margin-top:8px;overflow-wrap:anywhere}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input{flex:1;min-width:140px}
+.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.product{border:1px solid #e0e9e2;border-radius:12px;padding:13px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.product h3{font-size:15px;margin:0;overflow-wrap:anywhere}
+.product .price{font-weight:800;font-size:19px;color:#176b49}
+.cartrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px 0;border-bottom:1px solid #edf0ed}
+.cartrow input{width:76px}
+.totalrow{display:flex;justify-content:space-between;padding:8px 0;gap:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #edf0ed;white-space:nowrap}
+th{color:#66766c;background:#f8faf8}
+.tablewrap{overflow:auto}
+.hidden{display:none!important}
+.message{padding:11px;border-radius:9px;background:#edf7f0;margin:10px 0}
+.error{background:#fff0f0;color:#a41e2d}
+.receipt{max-width:400px;margin:0 auto}
+.receipt h2{text-align:center}
+.receipt .center{text-align:center}
+.dashboard-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dashboard-heading h2{margin-bottom:4px}
+.stat-icon{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stat-icon span:first-child{color:#718077;font-size:13px}
+.stat-icon .icon{font-size:20px}
+.stat-profit{border-top:3px solid #176b49}
+.stat-warning{border-top:3px solid #d99b20}
+.stat-money{border-top:3px solid #3d8b68}
+.stat-products{border-top:3px solid #607cba}
+.status-low{color:#a41e2d;font-weight:700}
+@media(max-width:850px){
+ main{padding:12px}
+ .layout{grid-template-columns:1fr}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .products{grid-template-columns:repeat(2,minmax(0,1fr))}
+ header{padding:14px}
+ nav button{flex:1;padding:10px 8px}
+}
+@media(max-width:420px){
+ .products{grid-template-columns:1fr 1fr}
+ .panel{padding:12px}
+ .stat strong{font-size:20px}
+ .brand{font-size:19px}
+ .stats{gap:8px}
+ .stat{padding:12px}
+}
+@media print{
+ body{background:white}
+ .no-print,header,nav,main>*:not(#receiptView){display:none!important}
+ #receiptView{display:block!important;margin:0;padding:0}
+ .receipt{max-width:none;border:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Tindahan<span>POS</span></div>
+  <div id="userInfo" class="small">Retail management</div>
+  <button id="logoutBtn" class="secondary hidden" onclick="logout()">Log out</button>
+</header>
+
+<main>
+<section id="loginView" class="login">
+  <h1>Welcome back</h1>
+  <p class="muted">Sign in to your store</p>
+  <form id="loginForm">
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" autocomplete="username" required maxlength="50">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button style="width:100%">Sign in</button>
+  </form>
+  <div id="loginMessage"></div>
+</section>
+
+<section id="appView" class="hidden">
+<nav id="nav">
+  <button class="active" data-page="pos">Cashier POS</button>
+  <button data-page="inventory">Inventory</button>
+  <button data-page="reports" class="adminOnly">Reports</button>
+  <button data-page="dashboard" class="adminOnly">Dashboard</button>
+</nav>
+
+<section id="posPage">
+  <div class="layout">
+    <div class="panel">
+      <h2>Products</h2>
+      <div class="toolbar">
+        <input id="productSearch" placeholder="Search product or SKU...">
+      </div>
+      <div id="productGrid" class="products"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Current sale</h2>
+      <div id="cart"></div>
+      <div class="totalrow"><span>Subtotal</span><strong id="subtotal">₱0.00</strong></div>
+      <div class="field">
+        <label for="discount">Discount (₱)</label>
+        <input id="discount" type="number" min="0" step="0.01" value="0">
+      </div>
+      <div class="totalrow"><strong>Total</strong><strong id="total">₱0.00</strong></div>
+      <div class="field">
+        <label for="paid">Cash received (₱)</label>
+        <input id="paid" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="totalrow"><span>Change</span><strong id="change">₱0.00</strong></div>
+      <button id="checkoutBtn" style="width:100%;margin-top:12px" onclick="checkout()">Complete sale</button>
+      <p class="small muted" style="margin-top:12px">Stock is checked again during checkout.</p>
+    </div>
+  </div>
+</section>
+
+<section id="inventoryPage" class="hidden">
+  <div class="panel adminOnly">
+    <h2>Add product</h2>
+    <form id="productForm">
+      <div class="stats">
+        <div class="field"><label>SKU / Code</label><input name="sku" required maxlength="50"></div>
+        <div class="field"><label>Product name</label><input name="name" required maxlength="150"></div>
+        <div class="field"><label>Category</label><input name="category" value="General" maxlength="80"></div>
+        <div class="field"><label>Unit</label><input name="unit" value="pcs" maxlength="30"></div>
+        <div class="field"><label>Cost price (₱)</label><input name="cost_price" type="number" min="0" step="0.01" required></div>
+        <div class="field"><label>Selling price (₱)</label><input name="selling_price" type="number" min="0" step="0.01" required></div>
+        <div class="field"><label>Opening stock</label><input name="stock" type="number" min="0" step="0.001" value="0" required></div>
+        <div class="field"><label>Low-stock alert</label><input name="low_stock_threshold" type="number" min="0" step="0.001" value="5"></div>
+      </div>
+      <button>Add product</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Stock inventory</h2>
+    <div class="toolbar"><input id="inventorySearch" placeholder="Search inventory..."></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>SKU</th><th>Product</th><th>Cost</th><th>Price</th><th>Stock</th><th>Status</th><th>Restock</th></tr></thead>
+        <tbody id="inventoryRows"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="reportsPage" class="hidden">
+  <div class="panel">
+    <h2>Sales and profit reports</h2>
+    <div class="toolbar">
+      <div class="field"><label for="fromDate">From</label><input id="fromDate" type="date"></div>
+      <div class="field"><label for="toDate">To</label><input id="toDate" type="date"></div>
+      <button onclick="loadReports()">Run report</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="muted">Sales shown</span><strong id="reportSales">₱0.00</strong></div>
+      <div class="stat"><span class="muted">Estimated profit</span><strong id="reportProfit">₱0.00</strong></div>
+      <div class="stat"><span class="muted">Transactions shown</span><strong id="reportCount">0</strong></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Receipt</th><th>Date</th><th>Cashier</th><th>Total</th><th>Profit</th></tr></thead>
+        <tbody id="reportRows"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="dashboardPage" class="hidden">
+  <div class="stats">
+    <div class="stat stat-money">
+      <div class="stat-icon"><span>Today's sales</span><span class="icon">₱</span></div>
+      <strong id="dSales">₱0.00</strong><span class="small muted">Completed sales today</span>
+    </div>
+    <div class="stat">
+      <div class="stat-icon"><span>Transactions</span><span class="icon">▤</span></div>
+      <strong id="dTransactions">0</strong><span class="small muted">Receipts today</span>
+    </div>
+    <div class="stat stat-profit">
+      <div class="stat-icon"><span>Estimated profit</span><span class="icon">↗</span></div>
+      <strong id="dProfit">₱0.00</strong><span class="small muted">Before other expenses</span>
+    </div>
+    <div class="stat stat-warning">
+      <div class="stat-icon"><span>Low-stock items</span><span class="icon">!</span></div>
+      <strong id="dLowStock">0</strong><span class="small muted">At or below alert level</span>
+    </div>
+    <div class="stat stat-products">
+      <div class="stat-icon"><span>Inventory value</span><span class="icon">▦</span></div>
+      <strong id="dInventoryValue">₱0.00</strong><span class="small muted">At recorded cost price</span>
+    </div>
+    <div class="stat">
+      <div class="stat-icon"><span>Active products</span><span class="icon">□</span></div>
+      <strong id="dProducts">0</strong><span class="small muted">Available in inventory</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="dashboard-heading">
+      <div>
+        <h2>Store overview</h2>
+        <p class="muted small" style="margin-bottom:0">Live summary from your Tindahan POS database</p>
+      </div>
+      <button class="secondary" type="button" onclick="loadDashboard()">Refresh overview</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Recent transactions</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Receipt</th><th>Date and time</th><th>Cashier</th><th>Total</th></tr></thead>
+          <tbody id="dashboardSalesRows"><tr><td colspan="4" class="muted">Loading transactions...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Low-stock alerts</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Product</th><th>Stock</th><th>Alert at</th></tr></thead>
+          <tbody id="dashboardStockRows"><tr><td colspan="3" class="muted">Loading inventory...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+</section>
+
+<section id="receiptView" class="hidden">
+  <div class="panel receipt">
+    <h2>Tindahan POS</h2>
+    <p class="center muted">Sales receipt</p>
+    <div id="receiptContent"></div>
+    <button class="no-print" onclick="window.print()">Print receipt</button>
+    <button class="no-print secondary" onclick="closeReceipt()">Back to POS</button>
+  </div>
+</section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = n => '₱' + Number(n || 0).toLocaleString('en-PH',{
+  minimumFractionDigits:2,
+  maximumFractionDigits:2
+});
+
+let me = null;
+let products = [];
+let cart = new Map();
+
+async function api(url, options = {}) {
+  const response = await fetch('/api' + url, {
+    credentials: 'same-origin',
+    headers: {'Content-Type':'application/json', ...(options.headers || {})},
+    ...options
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function showMessage(id, msg, error = false) {
+  $(id).innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'message' + (error ? ' error' : '');
+  el.textContent = msg;
+  $(id).append(el);
+}
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function showLogin() {
+  $('receiptView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+  $('loginView').classList.remove('hidden');
+  $('logoutBtn').classList.add('hidden');
+  $('userInfo').textContent = 'Retail management';
+  $('loginForm').reset();
+  $('loginMessage').innerHTML = '';
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+async function init() {
+  $('fromDate').value = today();
+  $('toDate').value = today();
+
+  try {
+    const data = await api('/me');
+    me = data.user;
+    enterApp();
+  } catch {
+    me = null;
+    showLogin();
+  }
+}
+
+function enterApp() {
+  if (!me) {
+    showLogin();
+    return;
+  }
+
+  $('loginView').classList.add('hidden');
+  $('receiptView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+  $('logoutBtn').classList.remove('hidden');
+  $('userInfo').textContent = me.fullName + ' · ' + me.role;
+
+  document.querySelectorAll('.adminOnly').forEach(el => {
+    el.classList.toggle('hidden', me.role !== 'admin');
+  });
+
+  go('pos');
+  loadProducts();
+
+  if (me.role === 'admin') loadDashboard();
+}
+
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  try {
+    const result = await api('/login', {
+      method:'POST',
+      body:JSON.stringify({
+        username:$('username').value,
+        password:$('password').value
+      })
+    });
+
+    me = result.user;
+    $('password').value = '';
+    $('loginMessage').innerHTML = '';
+    enterApp();
+    window.scrollTo({top:0, behavior:'instant'});
+  } catch(err) {
+    showMessage('loginMessage', err.message, true);
+  }
+});
+
+async function logout() {
+  try {
+    await api('/logout', {method:'POST', body:'{}'});
+  } catch(err) {
+    console.error('Logout request failed:', err);
+  }
+
+  me = null;
+  cart.clear();
+
+  // Hide all application and receipt screens before showing login.
+  $('receiptView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+  $('loginView').classList.remove('hidden');
+
+  $('logoutBtn').classList.add('hidden');
+  $('userInfo').textContent = 'Retail management';
+  $('loginForm').reset();
+  $('loginMessage').innerHTML = '';
+
+  renderCart();
+  window.scrollTo({top:0, behavior:'instant'});
+  $('username').focus();
+}
+
+document.querySelectorAll('#nav button').forEach(btn => {
+  btn.addEventListener('click', () => go(btn.dataset.page));
+});
+
+function go(page) {
+  if (!me) {
+    showLogin();
+    return;
+  }
+
+  if ((page === 'reports' || page === 'dashboard') && me.role !== 'admin') return;
+
+  ['pos','inventory','reports','dashboard'].forEach(p => {
+    $(p + 'Page').classList.toggle('hidden', p !== page);
+  });
+
+  document.querySelectorAll('#nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+
+  if (page === 'inventory') renderInventory();
+  if (page === 'reports') loadReports();
+  if (page === 'dashboard') loadDashboard();
+}
+
+async function loadProducts() {
+  try {
+    products = await api('/products');
+    renderProducts();
+    renderInventory();
+  } catch(err) {
+    console.error(err);
+    if (me) alert(err.message);
+  }
+}
+
+function renderProducts() {
+  const q = $('productSearch').value.toLowerCase();
+  const grid = $('productGrid');
+  grid.innerHTML = '';
+
+  products.filter(p => (p.name + ' ' + p.sku).toLowerCase().includes(q)).forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'product';
+
+    const name = document.createElement('h3');
+    name.textContent = p.name;
+
+    const sku = document.createElement('div');
+    sku.className = 'small muted';
+    sku.textContent = p.sku + ' · Stock ' + p.stock;
+
+    const price = document.createElement('div');
+    price.className = 'price';
+    price.textContent = money(p.selling_price);
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Add to cart';
+    btn.disabled = Number(p.stock) <= 0;
+    btn.onclick = () => addCart(p.id);
+
+    card.append(name, sku, price, btn);
+    grid.append(card);
+  });
+
+  if (!grid.children.length) grid.textContent = 'No matching products.';
+}
+
+$('productSearch').addEventListener('input', renderProducts);
+
+function addCart(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+
+  const old = cart.get(id);
+  if ((old?.quantity || 0) + 1 > Number(p.stock)) {
+    return alert('Not enough stock.');
+  }
+
+  cart.set(id, {
+    product_id:id,
+    name:p.name,
+    price:Number(p.selling_price),
+    quantity:(old?.quantity || 0) + 1
+  });
+  renderCart();
+}
+
+function renderCart() {
+  const el = $('cart');
+  el.innerHTML = '';
+
+  for (const [id, item] of cart) {
+    const row = document.createElement('div');
+    row.className = 'cartrow';
+
+    const left = document.createElement('div');
+    const name = document.createElement('strong');
+    name.textContent = item.name;
+
+    const line = document.createElement('div');
+    line.className = 'small muted';
+    line.textContent = money(item.price * item.quantity);
+    left.append(name, line);
+
+    const right = document.createElement('div');
+    const qty = document.createElement('input');
+    qty.type = 'number';
+    qty.min = '0.001';
+    qty.step = '0.001';
+    qty.value = item.quantity;
+    qty.setAttribute('aria-label','Quantity');
+
+    qty.onchange = () => {
+      const n = Number(qty.value);
+      const p = products.find(x => x.id === id);
+
+      if (!Number.isFinite(n) || n <= 0) {
+        cart.delete(id);
+      } else if (!p || n > Number(p.stock)) {
+        alert('Quantity exceeds available stock.');
+        qty.value = item.quantity;
+        return;
+      } else {
+        item.quantity = n;
+      }
+      renderCart();
+    };
+
+    const remove = document.createElement('button');
+    remove.className = 'danger';
+    remove.textContent = '×';
+    remove.onclick = () => {
+      cart.delete(id);
+      renderCart();
+    };
+
+    right.append(qty, remove);
+    row.append(left, right);
+    el.append(row);
+  }
+
+  const sub = [...cart.values()].reduce((s,i) => s + i.price * i.quantity, 0);
+  const discount = Number($('discount').value) || 0;
+  const total = Math.max(0, sub - discount);
+
+  $('subtotal').textContent = money(sub);
+  $('total').textContent = money(total);
+  $('change').textContent = money(Math.max(0, (Number($('paid').value) || 0) - total));
+}
+
+$('discount').addEventListener('input', renderCart);
+$('paid').addEventListener('input', renderCart);
+
+async function checkout() {
+  if (!me) return showLogin();
+  if (!cart.size) return alert('Add products first.');
+
+  const discount = Number($('discount').value) || 0;
+  const paid = Number($('paid').value);
+  const subtotal = [...cart.values()].reduce((s,i) => s + i.price * i.quantity, 0);
+
+  if (discount < 0 || discount > subtotal) return alert('Check the discount amount.');
+  if (!Number.isFinite(paid) || paid < subtotal - discount) {
+    return alert('Cash received must cover the total.');
+  }
+
+  $('checkoutBtn').disabled = true;
+
+  try {
+    const sale = await api('/sales', {
+      method:'POST',
+      body:JSON.stringify({
+        items:[...cart.values()].map(i => ({
+          product_id:i.product_id,
+          quantity:i.quantity
+        })),
+        discount,
+        amount_paid:paid
+      })
+    });
+
+    cart.clear();
+    $('discount').value = '0';
+    $('paid').value = '';
+    renderCart();
+
+    await loadProducts();
+    showReceipt(sale);
+  } catch(err) {
+    alert(err.message);
+    await loadProducts();
+  } finally {
+    $('checkoutBtn').disabled = false;
+  }
+}
+
+function showReceipt(sale) {
+  $('loginView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+  $('receiptView').classList.remove('hidden');
+
+  const root = $('receiptContent');
+  root.innerHTML = '';
+
+  const add = (text, bold = false) => {
+    const p = document.createElement('p');
+    p.textContent = text;
+    if (bold) p.style.fontWeight = '800';
+    root.append(p);
+  };
+
+  add('Receipt: ' + sale.receipt_no, true);
+  add('Date: ' + new Date().toLocaleString('en-PH'));
+
+  sale.items.forEach(i => {
+    add(`${i.name} × ${i.quantity} — ${money(i.line_total)}`);
+  });
+
+  add('Subtotal: ' + money(sale.subtotal));
+  add('Discount: ' + money(sale.discount));
+  add('TOTAL: ' + money(sale.total), true);
+  add('Cash: ' + money(sale.amount_paid));
+  add('Change: ' + money(sale.change_amount), true);
+  add('Thank you for shopping!', true);
+
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+function closeReceipt() {
+  $('receiptView').classList.add('hidden');
+
+  if (!me) {
+    showLogin();
+    return;
+  }
+
+  $('loginView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+  go('pos');
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+$('productForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!me || me.role !== 'admin') return;
+
+  const f = new FormData(e.target);
+  const body = Object.fromEntries(f.entries());
+
+  for (const k of ['cost_price','selling_price','stock','low_stock_threshold']) {
+    body[k] = Number(body[k]);
+  }
+
+  try {
+    await api('/products', {method:'POST', body:JSON.stringify(body)});
+
+    e.target.reset();
+    e.target.elements.category.value = 'General';
+    e.target.elements.unit.value = 'pcs';
+    e.target.elements.stock.value = '0';
+    e.target.elements.low_stock_threshold.value = '5';
+
+    await loadProducts();
+    alert('Product added.');
+  } catch(err) {
+    alert(err.message);
+  }
+});
+
+function renderInventory() {
+  const q = $('inventorySearch').value.toLowerCase();
+  const body = $('inventoryRows');
+  body.innerHTML = '';
+
+  products.filter(p => (p.name + ' ' + p.sku).toLowerCase().includes(q)).forEach(p => {
+    const tr = document.createElement('tr');
+
+    const values = [
+      p.sku,
+      p.name,
+      money(p.cost_price),
+      money(p.selling_price),
+      p.stock,
+      Number(p.stock) <= Number(p.low_stock_threshold) ? 'LOW STOCK' : 'OK'
+    ];
+
+    values.forEach((v,index) => {
+      const td = document.createElement('td');
+      td.textContent = v;
+      if (index === 5 && v === 'LOW STOCK') td.className = 'status-low';
+      tr.append(td);
+    });
+
+    const td = document.createElement('td');
+
+    if (me && me.role === 'admin') {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '.001';
+      input.step = '.001';
+      input.placeholder = 'Qty';
+      input.style.width = '78px';
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Add';
+
+      btn.onclick = async () => {
+        const quantity = Number(input.value);
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+          return alert('Enter a valid quantity.');
+        }
+
+        try {
+          await api(`/products/${p.id}/restock`, {
+            method:'POST',
+            body:JSON.stringify({quantity})
+          });
+          await loadProducts();
+          if (!$('dashboardPage').classList.contains('hidden')) loadDashboard();
+        } catch(err) {
+          alert(err.message);
+        }
+      };
+
+      td.append(input, btn);
+    } else {
+      td.textContent = 'Admin only';
+    }
+
+    tr.append(td);
+    body.append(tr);
+  });
+
+  if (!body.children.length) {
+    body.innerHTML = '<tr><td colspan="7" class="muted">No products found.</td></tr>';
+  }
+}
+
+$('inventorySearch').addEventListener('input', renderInventory);
+
+async function loadReports() {
+  try {
+    const r = await api(`/sales?from=${encodeURIComponent($('fromDate').value)}&to=${encodeURIComponent($('toDate').value)}`);
+
+    $('reportSales').textContent = money(r.totals.sales);
+    $('reportProfit').textContent = money(r.totals.profit);
+    $('reportCount').textContent = r.totals.count;
+
+    const body = $('reportRows');
+    body.innerHTML = '';
+
+    r.sales.forEach(s => {
+      const tr = document.createElement('tr');
+      [
+        s.receipt_no,
+        new Date(s.created_at).toLocaleString('en-PH'),
+        s.full_name,
+        money(s.total),
+        money(s.estimated_profit)
+      ].forEach(v => {
+        const td = document.createElement('td');
+        td.textContent = v;
+        tr.append(td);
+      });
+      body.append(tr);
+    });
+
+    if (!r.sales.length) {
+      body.innerHTML = '<tr><td colspan="5" class="muted">No sales found for this date range.</td></tr>';
+    }
+  } catch(err) {
+    alert(err.message);
+  }
+}
+
+async function loadDashboard() {
+  if (!me || me.role !== 'admin') return;
+
+  const salesBody = $('dashboardSalesRows');
+  const stockBody = $('dashboardStockRows');
+
+  try {
+    const d = await api('/dashboard');
+
+    $('dSales').textContent = money(d.todaySales);
+    $('dTransactions').textContent = Number(d.totalTransactions || 0).toLocaleString('en-PH');
+    $('dProfit').textContent = money(d.estimatedProfit);
+    $('dLowStock').textContent = Number(d.lowStock || 0).toLocaleString('en-PH');
+    $('dInventoryValue').textContent = money(d.inventoryValue);
+    $('dProducts').textContent = Number(d.totalProducts || 0).toLocaleString('en-PH');
+
+    salesBody.innerHTML = '';
+
+    if (!d.recentSales || d.recentSales.length === 0) {
+      salesBody.innerHTML = '<tr><td colspan="4" class="muted">No transactions recorded yet.</td></tr>';
+    } else {
+      d.recentSales.forEach(s => {
+        const tr = document.createElement('tr');
+        [
+          s.receipt_no || '-',
+          s.created_at ? new Date(s.created_at).toLocaleString('en-PH') : '-',
+          s.cashier || '-',
+          money(s.total)
+        ].forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.append(td);
+        });
+        salesBody.append(tr);
+      });
+    }
+
+    stockBody.innerHTML = '';
+
+    if (!d.lowStockProducts || d.lowStockProducts.length === 0) {
+      stockBody.innerHTML = '<tr><td colspan="3" class="muted">No low-stock products. Inventory looks good.</td></tr>';
+    } else {
+      d.lowStockProducts.forEach(p => {
+        const tr = document.createElement('tr');
+
+        const product = document.createElement('td');
+        product.textContent = p.name || '-';
+
+        const stock = document.createElement('td');
+        stock.textContent = `${p.stock} ${p.unit || ''}`.trim();
+
+        const threshold = document.createElement('td');
+        threshold.textContent = `${p.low_stock_threshold} ${p.unit || ''}`.trim();
+
+        tr.append(product, stock, threshold);
+        stockBody.append(tr);
+      });
+    }
+  } catch(err) {
+    console.error('Dashboard load failed:', err);
+    salesBody.innerHTML = '<tr><td colspan="4" class="error">Could not load transactions. Please refresh.</td></tr>';
+    stockBody.innerHTML = '<tr><td colspan="3" class="error">Could not load inventory alerts.</td></tr>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

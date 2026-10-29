@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tindahan POS - Connect Phone</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #eef4ef;
+      color: #17291e;
+      font-family: Arial, sans-serif;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      padding: 28px;
+      border-radius: 20px;
+      background: white;
+      text-align: center;
+      box-shadow: 0 12px 40px #173a2118;
+    }
+    h1 { margin-top: 0; }
+    #qr {
+      display: block;
+      width: 240px;
+      height: 240px;
+      max-width: 100%;
+      margin: 20px auto;
+      object-fit: contain;
+    }
+    #url { overflow-wrap: anywhere; font-weight: bold; }
+    #status { color: #647268; font-size: 14px; }
+    button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 10px;
+      background: #176b49;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .note { color: #647268; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Tindahan POS</h1>
+    <p>Scan this QR code using your phone camera.</p>
+    <img id="qr" alt="POS connection QR code">
+    <p id="url">Finding your network...</p>
+    <p id="status">Checking connection...</p>
+    <button onclick="refreshConnection()">Refresh QR Code</button>
+    <p class="note">
+      Connect your phone and POS computer to the same Wi-Fi network.
+      Keep the POS server running.
+    </p>
+  </main>
+
+  <script>
+    let previousUrl = '';
+
+    async function refreshConnection() {
+      const status = document.getElementById('status');
+      const qr = document.getElementById('qr');
+      const urlText = document.getElementById('url');
+
+      status.textContent = 'Checking your network...';
+
+      try {
+        const response = await fetch('/api/connection-info', {
+          cache: 'no-store'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Could not find your network.');
+        }
+
+        if (data.url !== previousUrl) {
+          qr.src = data.qrDataUrl;
+          urlText.textContent = data.url;
+          previousUrl = data.url;
+        }
+
+        status.textContent =
+          'Network: ' + data.interfaceName +
+          ' | Last checked: ' + new Date().toLocaleTimeString();
+      } catch (error) {
+        status.textContent = error.message;
+        urlText.textContent = 'Connection unavailable';
+      }
+    }
+
+    refreshConnection();
+    setInterval(refreshConnection, 10000);
+  </script>
+</body>
+</html>
